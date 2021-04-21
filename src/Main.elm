@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Browser
+import Browser exposing (Document)
 import Game exposing (Game, gameView, newGame, nextPlayer, startIteration, stopIteration, tick)
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
@@ -14,7 +14,12 @@ import Time
 
 main : Program () Model Msg
 main =
-    Browser.element { init = init, update = update, view = view, subscriptions = subscriptions }
+    Browser.document
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
 
 
 
@@ -118,14 +123,19 @@ timerStateView state =
     div [] [ text (timerStateLabel state) ]
 
 
-view : Model -> Html Msg
+view : Model -> Document Msg
 view model =
-    div []
-        [ timerStateView model.timerState
-        , button [ onClick StartTimer ] [ text "start increment timer" ]
-        , button [ onClick StopTimer ] [ text "stop increment timer" ]
-        , button [ onClick NextPlayer ] [ text "next player" ]
-        , button [ onClick StartIteration ] [ text "start iteration" ]
-        , button [ onClick StopIteration ] [ text "stop iteration" ]
-        , gameView model.game
+    { title = "Terraforming mars clock"
+    , body =
+        [ div
+            []
+            [ timerStateView model.timerState
+            , button [ onClick StartTimer ] [ text "start increment timer" ]
+            , button [ onClick StopTimer ] [ text "stop increment timer" ]
+            , button [ onClick NextPlayer ] [ text "next player" ]
+            , button [ onClick StartIteration ] [ text "start iteration" ]
+            , button [ onClick StopIteration ] [ text "stop iteration" ]
+            , gameView model.game
+            ]
         ]
+    }

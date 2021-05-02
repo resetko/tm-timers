@@ -2,20 +2,25 @@ module Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, st
 
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (style)
-import Player exposing (Player, PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers, playerView)
-import Queue exposing (Queue, getCurrent, length, next, removeCurrent, toList)
+import Player exposing (Player, playerView)
+import PlayerQueue exposing (PlayerQueue)
+import PlayerTimers exposing (PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers)
+
+
+
+-- import Queue exposing (Queue, getCurrent, length, next, removeCurrent, toList)
 
 
 type Phase
     = Production { remainingTicks : Int }
-    | Play { iterationQueue : Queue Player }
+    | Play { iterationQueue : PlayerQueue }
 
 
 type alias Game =
     { iteration : Int
     , phase : Phase
     , playerTimers : PlayerTimers
-    , players : Queue Player
+    , players : PlayerQueue
     }
 
 
@@ -23,7 +28,7 @@ newGame : Player -> List Player -> Game
 newGame first list =
     { iteration = 1
     , phase = Production { remainingTicks = 120 }
-    , players = ( first, list )
+    , players = PlayerQueue.create first list
     , playerTimers = newPlayerTimers (first :: list) 2000
     }
 
@@ -48,7 +53,7 @@ stopIteration game =
             { game
                 | phase = Production { remainingTicks = 120 }
                 , iteration = game.iteration + 1
-                , players = next game.players
+                , players = PlayerQueue.next game.players
             }
 
 
@@ -59,7 +64,7 @@ nextPlayer game =
             game
 
         Play phaseInfo ->
-            { game | phase = Play { phaseInfo | iterationQueue = next phaseInfo.iterationQueue } }
+            { game | phase = Play { phaseInfo | iterationQueue = PlayerQueue.next phaseInfo.iterationQueue } }
 
 
 skipCurrentPlayer : Game -> Game
@@ -69,11 +74,12 @@ skipCurrentPlayer game =
             game
 
         Play phase ->
-            if length phase.iterationQueue == 1 then
-                stopIteration game
+            case PlayerQueue.skipCurrent phase.iterationQueue of
+                Nothing ->
+                    stopIteration game
 
-            else
-                { game | phase = Play { iterationQueue = removeCurrent phase.iterationQueue } }
+                Just newQueue ->
+                    { game | phase = Play { iterationQueue = newQueue } }
 
 
 tick : Game -> Game
@@ -87,7 +93,7 @@ tick game =
         Play phase ->
             let
                 current =
-                    getCurrent phase.iterationQueue
+                    PlayerQueue.getCurrent phase.iterationQueue
             in
             { game | playerTimers = decrementPlayerTick current game.playerTimers }
 
@@ -109,17 +115,17 @@ gameView game =
                     , div [] [ text (String.fromInt phase.remainingTicks) ]
                     ]
                 , div [] [ text (String.fromInt (getIteration game)) ]
-                , div [] (List.map playerView (toList game.players))
+                , div [] (List.map playerView (PlayerQueue.toList game.players))
                 ]
 
         Play phase ->
             let
                 current =
-                    getRemaining (getCurrent phase.iterationQueue) game.playerTimers
+                    getRemaining (PlayerQueue.getCurrent phase.iterationQueue) game.playerTimers
             in
             div []
                 [ div [ style "border" "1px solid green" ] [ text "play phase" ]
                 , div [] [ text ("player remaining: " ++ String.fromInt current) ]
                 , div [] [ text (String.fromInt (getIteration game)) ]
-                , div [] (List.map playerView (toList phase.iterationQueue))
+                , div [] (List.map playerView (PlayerQueue.toList phase.iterationQueue))
                 ]

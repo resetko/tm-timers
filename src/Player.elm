@@ -1,6 +1,5 @@
-module Player exposing (Player, PlayerTimers, decrementPlayerTick, getPlayerCssStyle, getRemaining, newBlack, newBlue, newPlayerTimers, newRed, playerLabel, playerView)
+module Player exposing (Player, getPlayerCssStyle, newBlack, newBlue, newRed, playerLabel, playerView, toString)
 
-import Dict exposing (Dict, get, update)
 import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (style)
 
@@ -30,39 +29,6 @@ toString player =
 
         Black ->
             "black"
-
-
-type PlayerTimers
-    = Table (Dict String Int)
-
-
-newPlayerTimers : List Player -> Int -> PlayerTimers
-newPlayerTimers players ticks =
-    Table
-        (Dict.fromList (List.map (\item -> ( toString item, ticks )) players))
-
-
-decrementPlayerTick : Player -> PlayerTimers -> PlayerTimers
-decrementPlayerTick player table =
-    case table of
-        Table dict ->
-            let
-                newDict =
-                    update (toString player) (Maybe.map (\ticks -> ticks - 1)) dict
-            in
-            Table newDict
-
-
-getRemaining : Player -> PlayerTimers -> Int
-getRemaining player timers =
-    case timers of
-        Table dict ->
-            case get (toString player) dict of
-                Nothing ->
-                    0
-
-                Just ticks ->
-                    ticks
 
 
 newBlue : Player

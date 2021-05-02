@@ -1,10 +1,9 @@
-module Game exposing (Game, gameView, newGame, nextPlayer, startIteration, stopIteration, tick)
+module Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, stopIteration, tick)
 
-import Dict exposing (get)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (style)
 import Player exposing (Player, PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers, playerView)
-import Queue exposing (Queue, getCurrent, next, toList)
+import Queue exposing (Queue, getCurrent, length, next, removeCurrent, toList)
 
 
 type Phase
@@ -61,6 +60,20 @@ nextPlayer game =
 
         Play phaseInfo ->
             { game | phase = Play { phaseInfo | iterationQueue = next phaseInfo.iterationQueue } }
+
+
+skipCurrentPlayer : Game -> Game
+skipCurrentPlayer game =
+    case game.phase of
+        Production _ ->
+            game
+
+        Play phase ->
+            if length phase.iterationQueue == 1 then
+                stopIteration game
+
+            else
+                { game | phase = Play { iterationQueue = removeCurrent phase.iterationQueue } }
 
 
 tick : Game -> Game

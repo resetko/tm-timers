@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Browser exposing (Document)
-import Game exposing (Game, gameView, newGame, nextPlayer, startIteration, stopIteration, tick)
+import Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, stopIteration, tick)
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
 import Player exposing (newBlack, newBlue, newRed)
@@ -70,6 +70,7 @@ type Msg
     | StartIteration
     | StopIteration
     | StopTimer
+    | SkipCurrent
 
 
 startTimer : Model -> Model
@@ -103,6 +104,9 @@ update msg model =
         NextPlayer ->
             ( { model | game = nextPlayer model.game }, Cmd.none )
 
+        SkipCurrent ->
+            ( { model | game = skipCurrentPlayer model.game }, Cmd.none )
+
 
 timerStateLabel : TimerState -> String
 timerStateLabel state =
@@ -135,6 +139,7 @@ view model =
             , button [ onClick NextPlayer ] [ text "next player" ]
             , button [ onClick StartIteration ] [ text "start iteration" ]
             , button [ onClick StopIteration ] [ text "stop iteration" ]
+            , button [ onClick SkipCurrent ] [ text "skip current" ]
             , gameView model.game
             ]
         ]

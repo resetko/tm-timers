@@ -68,7 +68,6 @@ type Msg
     | StartTimer
     | NextPlayer
     | StartIteration
-    | StopIteration
     | StopTimer
     | SkipCurrent
 
@@ -97,9 +96,6 @@ update msg model =
 
         StartIteration ->
             ( { model | game = startIteration model.game }, Cmd.none )
-
-        StopIteration ->
-            ( { model | game = stopIteration model.game }, Cmd.none )
 
         NextPlayer ->
             ( { model | game = nextPlayer model.game }, Cmd.none )
@@ -138,7 +134,6 @@ view model =
             , button [ onClick StopTimer ] [ text "stop increment timer" ]
             , button [ onClick NextPlayer ] [ text "next player" ]
             , button [ onClick StartIteration ] [ text "start iteration" ]
-            , button [ onClick StopIteration ] [ text "stop iteration" ]
             , button [ onClick SkipCurrent ] [ text "skip current" ]
             , gameView model.game
             ]

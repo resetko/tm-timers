@@ -1,17 +1,12 @@
 module Main exposing (..)
 
 import Browser exposing (Document)
-import Element
+import Element exposing (Element, column, row, spacing, text)
+import Element.Input exposing (button)
 import Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, tick)
 import GameBuilder
-import Html exposing (Html, button, div, hr, text)
-import Html.Events exposing (onClick)
 import Player exposing (newBlack, newBlue, newRed)
 import Time
-
-
-
--- MAIN
 
 
 main : Program () Model Msg
@@ -22,10 +17,6 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
-
-
-
--- MODEL
 
 
 type TimerState
@@ -57,10 +48,6 @@ subscriptions model =
 
         Stopped ->
             Sub.none
-
-
-
--- UPDATE
 
 
 createTick : any -> Msg
@@ -127,26 +114,34 @@ timerStateLabel state =
 -- VIEW
 
 
-timerStateView : TimerState -> Html msg
+timerStateView : TimerState -> Element msg
 timerStateView state =
-    div [] [ text (timerStateLabel state) ]
+    text <| timerStateLabel state
+
+
+viewControls : Element Msg
+viewControls =
+    row [ spacing 15 ]
+        [ button [] { onPress = Just StartTimer, label = text "start increment timer" }
+        , button [] { onPress = Just StopTimer, label = text "stop increment timer" }
+        , button [] { onPress = Just NextPlayer, label = text "next player" }
+        , button [] { onPress = Just StartIteration, label = text "start iteration" }
+        , button [] { onPress = Just SkipCurrent, label = text "skip current" }
+        ]
 
 
 view : Model -> Document Msg
 view model =
     { title = "Terraforming mars clock"
     , body =
-        [ div
-            []
-            [ timerStateView model.timerState
-            , button [ onClick StartTimer ] [ text "start increment timer" ]
-            , button [ onClick StopTimer ] [ text "stop increment timer" ]
-            , button [ onClick NextPlayer ] [ text "next player" ]
-            , button [ onClick StartIteration ] [ text "start iteration" ]
-            , button [ onClick SkipCurrent ] [ text "skip current" ]
-            , gameView model.game
-            , hr [] []
-            , Element.layout [] (Element.map (\msg -> BuilderMsg msg) (GameBuilder.view model.builder))
-            ]
+        [ Element.layout []
+            (column
+                []
+                [ timerStateView model.timerState
+                , viewControls
+                , gameView model.game
+                , Element.map (\msg -> BuilderMsg msg) (GameBuilder.view model.builder)
+                ]
+            )
         ]
     }

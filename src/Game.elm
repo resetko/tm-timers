@@ -1,8 +1,7 @@
 module Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, tick)
 
-import Element exposing (Element)
-import Html exposing (Html, div, text)
-import Html.Attributes exposing (style)
+import Element exposing (Element, column, rgb255, row, spacing, text)
+import Element.Border as Border
 import Player exposing (Player)
 import PlayerQueue exposing (PlayerQueue)
 import PlayerTimers exposing (PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers)
@@ -100,34 +99,35 @@ getIteration game =
     game.iteration
 
 
-deprecatedPlayerViewProxy : Player -> Html msg
-deprecatedPlayerViewProxy player =
-    Element.layout [] (Player.view player)
-
-
-gameView : Game -> Html msg
+gameView : Game -> Element msg
 gameView game =
     case game.phase of
         Production phase ->
-            div []
-                [ div
-                    [ style "border" "1px solid red"
-                    ]
-                    [ text "production phase"
-                    , div [] [ text (String.fromInt phase.remainingTicks) ]
-                    ]
-                , div [] [ text (String.fromInt (getIteration game)) ]
-                , div [] (List.map deprecatedPlayerViewProxy (PlayerQueue.toList game.players))
+            let
+                playerList =
+                    PlayerQueue.toList game.players
+            in
+            column [ spacing 5 ]
+                [ row
+                    [ Border.color <| rgb255 255 0 0, spacing 15 ]
+                    [ text "production phase", text (String.fromInt phase.remainingTicks) ]
+                , text (String.fromInt (getIteration game))
+                , row [] (List.map Player.view playerList)
                 ]
 
         Play phase ->
             let
                 current =
                     getRemaining (PlayerQueue.getCurrent phase.iterationQueue) game.playerTimers
+
+                playerList =
+                    PlayerQueue.toList phase.iterationQueue
             in
-            div []
-                [ div [ style "border" "1px solid green" ] [ text "play phase" ]
-                , div [] [ text ("player remaining: " ++ String.fromInt current) ]
-                , div [] [ text (String.fromInt (getIteration game)) ]
-                , div [] (List.map deprecatedPlayerViewProxy (PlayerQueue.toList phase.iterationQueue))
+            column [ spacing 5 ]
+                [ row
+                    [ Border.color <| rgb255 0 255 0, spacing 15 ]
+                    [ text "play phase" ]
+                , text (String.fromInt (getIteration game))
+                , text ("player remaining: " ++ String.fromInt current)
+                , row [] (List.map Player.view playerList)
                 ]

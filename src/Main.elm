@@ -1,8 +1,10 @@
 module Main exposing (..)
 
 import Browser exposing (Document)
-import Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, stopIteration, tick)
-import Html exposing (Html, button, div, text)
+import Element
+import Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, tick)
+import GameBuilder
+import Html exposing (Html, button, div, hr, text)
 import Html.Events exposing (onClick)
 import Player exposing (newBlack, newBlue, newRed)
 import Time
@@ -32,12 +34,15 @@ type TimerState
 
 
 type alias Model =
-    { counter : Int, timerState : TimerState, game : Game }
+    { timerState : TimerState
+    , game : Game
+    , builder : GameBuilder.Model
+    }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model 0 Stopped (newGame newBlue [ newRed, newBlack ]), Cmd.none )
+    ( Model Stopped (newGame newBlue [ newRed, newBlack ]) GameBuilder.init, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -70,6 +75,7 @@ type Msg
     | StartIteration
     | StopTimer
     | SkipCurrent
+    | BuilderMsg GameBuilder.Msg
 
 
 startTimer : Model -> Model
@@ -102,6 +108,9 @@ update msg model =
 
         SkipCurrent ->
             ( { model | game = skipCurrentPlayer model.game }, Cmd.none )
+
+        BuilderMsg _ ->
+            ( model, Cmd.none )
 
 
 timerStateLabel : TimerState -> String
@@ -136,6 +145,8 @@ view model =
             , button [ onClick StartIteration ] [ text "start iteration" ]
             , button [ onClick SkipCurrent ] [ text "skip current" ]
             , gameView model.game
+            , hr [] []
+            , Element.layout [] (Element.map (\msg -> BuilderMsg msg) (GameBuilder.view model.builder))
             ]
         ]
     }

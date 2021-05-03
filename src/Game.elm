@@ -1,14 +1,11 @@
-module Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, stopIteration, tick)
+module Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, tick)
 
+import Element exposing (Element)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (style)
-import Player exposing (Player, playerView)
+import Player exposing (Player)
 import PlayerQueue exposing (PlayerQueue)
 import PlayerTimers exposing (PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers)
-
-
-
--- import Queue exposing (Queue, getCurrent, length, next, removeCurrent, toList)
 
 
 type Phase
@@ -103,6 +100,11 @@ getIteration game =
     game.iteration
 
 
+deprecatedPlayerViewProxy : Player -> Html msg
+deprecatedPlayerViewProxy player =
+    Element.layout [] (Player.view player)
+
+
 gameView : Game -> Html msg
 gameView game =
     case game.phase of
@@ -115,7 +117,7 @@ gameView game =
                     , div [] [ text (String.fromInt phase.remainingTicks) ]
                     ]
                 , div [] [ text (String.fromInt (getIteration game)) ]
-                , div [] (List.map playerView (PlayerQueue.toList game.players))
+                , div [] (List.map deprecatedPlayerViewProxy (PlayerQueue.toList game.players))
                 ]
 
         Play phase ->
@@ -127,5 +129,5 @@ gameView game =
                 [ div [ style "border" "1px solid green" ] [ text "play phase" ]
                 , div [] [ text ("player remaining: " ++ String.fromInt current) ]
                 , div [] [ text (String.fromInt (getIteration game)) ]
-                , div [] (List.map playerView (PlayerQueue.toList phase.iterationQueue))
+                , div [] (List.map deprecatedPlayerViewProxy (PlayerQueue.toList phase.iterationQueue))
                 ]

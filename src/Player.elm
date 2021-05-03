@@ -1,7 +1,8 @@
-module Player exposing (Player, getPlayerCssStyle, newBlack, newBlue, newRed, playerLabel, playerView, toString)
+module Player exposing (Player, allPlayersList, newBlack, newBlue, newRed, playerBackground, playerLabel, toString, view)
 
-import Html exposing (Attribute, Html, div, text)
-import Html.Attributes exposing (style)
+import Element exposing (Attribute, Element, el, height, px, rgb255, text, width)
+import Element.Background as Background
+import Element.Font as Font
 
 
 type Player
@@ -29,6 +30,11 @@ toString player =
 
         Black ->
             "black"
+
+
+allPlayersList : List Player
+allPlayersList =
+    [ Green, Yellow, Blue, Black, NoSkin ]
 
 
 newBlue : Player
@@ -65,25 +71,31 @@ playerLabel player =
             "Black"
 
 
-getPlayerCssStyle : Player -> Attribute msg
-getPlayerCssStyle player =
+playerBackground : Player -> Attribute msg
+playerBackground player =
     case player of
         NoSkin ->
-            style "background" "red"
+            Background.color <| rgb255 255 0 0
 
         Blue ->
-            style "background" "blue"
+            Background.color <| rgb255 0 0 255
 
         Green ->
-            style "background" "green"
+            Background.color <| rgb255 0 255 0
 
         Yellow ->
-            style "background" "yellow"
+            Background.color <| rgb255 255 255 0
 
         Black ->
-            style "background" "grey"
+            Background.color <| rgb255 128 128 128
 
 
-playerView : Player -> Html msg
-playerView player =
-    div [ style "height" "50px", style "width" "50px", getPlayerCssStyle player ] [ text (playerLabel player) ]
+view : Player -> Element msg
+view player =
+    el
+        [ height <| px 50
+        , width <| px 50
+        , Font.size 14
+        , playerBackground player
+        ]
+        (text <| playerLabel player)

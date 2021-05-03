@@ -1,6 +1,7 @@
 module GameBuilder exposing (Model, Msg, init, update, view)
 
 import Element exposing (Element, column, row, spacing)
+import Element.Input exposing (button)
 import List exposing (filter, map)
 import Player exposing (Player, allPlayersList)
 
@@ -25,14 +26,14 @@ update msg model =
         Pick player ->
             let
                 filtered =
-                    filter (\( item, _ ) -> item == player) model
+                    filter (\( item, _ ) -> item /= player) model
             in
             filtered ++ [ ( player, True ) ]
 
         Remove player ->
             let
                 filtered =
-                    filter (\( item, _ ) -> item == player) model
+                    filter (\( item, _ ) -> item /= player) model
             in
             filtered ++ [ ( player, False ) ]
 
@@ -47,17 +48,22 @@ getRemaining model =
     map (\( item, _ ) -> item) (filter (\( _, selected ) -> not selected) model)
 
 
-view : Model -> Element msg
+playerButton : Maybe msg -> Player -> Element msg
+playerButton msg player =
+    button [] { label = Player.view player, onPress = msg }
+
+
+view : Model -> Element Msg
 view model =
     column [ spacing 5 ]
         [ row [ spacing 5 ]
             (map
-                Player.view
+                (\item -> playerButton (Just (Pick item)) item)
                 (getRemaining model)
             )
         , row [ spacing 5 ]
             (map
-                Player.view
+                (\item -> playerButton (Just (Remove item)) item)
                 (getSelected model)
             )
         ]

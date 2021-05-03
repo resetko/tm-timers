@@ -96,8 +96,8 @@ update msg model =
         SkipCurrent ->
             ( { model | game = skipCurrentPlayer model.game }, Cmd.none )
 
-        BuilderMsg _ ->
-            ( model, Cmd.none )
+        BuilderMsg builderMsg ->
+            ( { model | builder = GameBuilder.update builderMsg model.builder }, Cmd.none )
 
 
 timerStateLabel : TimerState -> String

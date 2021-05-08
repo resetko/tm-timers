@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser exposing (Document)
 import Element exposing (Element, column, row, spacing, text)
 import Element.Input exposing (button)
-import Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, tick)
+import Game
 import GameBuilder
 import Player exposing (newBlack, newBlue, newRed)
 import Time
@@ -24,16 +24,20 @@ type TimerState
     | Stopped
 
 
+type AppState
+    = Builder GameBuilder.Model
+    | Game Game.Model
+
+
 type alias Model =
     { timerState : TimerState
-    , game : Game
-    , builder : GameBuilder.Model
+    , app : AppState
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model Stopped (newGame newBlue [ newRed, newBlack ]) GameBuilder.init, Cmd.none )
+    ( Model Stopped (Builder GameBuilder.init), Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -58,10 +62,8 @@ createTick _ =
 type Msg
     = Tick
     | StartTimer
-    | NextPlayer
-    | StartIteration
     | StopTimer
-    | SkipCurrent
+    | GameMsg Game.Msg
     | BuilderMsg GameBuilder.Msg
 
 
@@ -77,27 +79,31 @@ stopTimer model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Tick ->
-            ( { model | game = tick model.game }, Cmd.none )
+    case model.app of
+        Builder builder ->
+            case msg of
+                BuilderMsg builderMsg ->
+                    ( { model | app = Builder (GameBuilder.update builderMsg builder) }, Cmd.none )
 
-        StartTimer ->
-            ( startTimer model, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
-        StopTimer ->
-            ( stopTimer model, Cmd.none )
+        Game game ->
+            case msg of
+                Tick ->
+                    ( { model | app = Game (Game.update Game.onTick game) }, Cmd.none )
 
-        StartIteration ->
-            ( { model | game = startIteration model.game }, Cmd.none )
+                GameMsg gameMsg ->
+                    ( { model | app = Game (Game.update gameMsg game) }, Cmd.none )
 
-        NextPlayer ->
-            ( { model | game = nextPlayer model.game }, Cmd.none )
+                StartTimer ->
+                    ( startTimer model, Cmd.none )
 
-        SkipCurrent ->
-            ( { model | game = skipCurrentPlayer model.game }, Cmd.none )
+                StopTimer ->
+                    ( stopTimer model, Cmd.none )
 
-        BuilderMsg builderMsg ->
-            ( { model | builder = GameBuilder.update builderMsg model.builder }, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
 
 timerStateLabel : TimerState -> String
@@ -124,24 +130,26 @@ viewControls =
     row [ spacing 15 ]
         [ button [] { onPress = Just StartTimer, label = text "start increment timer" }
         , button [] { onPress = Just StopTimer, label = text "stop increment timer" }
-        , button [] { onPress = Just NextPlayer, label = text "next player" }
-        , button [] { onPress = Just StartIteration, label = text "start iteration" }
-        , button [] { onPress = Just SkipCurrent, label = text "skip current" }
         ]
+
+
+viewApp : Model -> Element Msg
+viewApp model =
+    case model.app of
+        Game game ->
+            column
+                []
+                [ timerStateView model.timerState
+                , viewControls
+                , Game.view game
+                ]
+
+        Builder builder ->
+            Element.map (\msg -> BuilderMsg msg) (GameBuilder.view builder)
 
 
 view : Model -> Document Msg
 view model =
     { title = "Terraforming mars clock"
-    , body =
-        [ Element.layout []
-            (column
-                []
-                [ timerStateView model.timerState
-                , viewControls
-                , gameView model.game
-                , Element.map (\msg -> BuilderMsg msg) (GameBuilder.view model.builder)
-                ]
-            )
-        ]
+    , body = [ Element.layout [] (viewApp model) ]
     }

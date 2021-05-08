@@ -1,4 +1,4 @@
-module Game exposing (Game, gameView, newGame, nextPlayer, skipCurrentPlayer, startIteration, tick)
+module Game exposing (Model, Msg, init, onTick, update, view)
 
 import Element exposing (Element, column, rgb255, row, spacing, text)
 import Element.Border as Border
@@ -12,7 +12,7 @@ type Phase
     | Play { iterationQueue : PlayerQueue }
 
 
-type alias Game =
+type alias Model =
     { iteration : Int
     , phase : Phase
     , playerTimers : PlayerTimers
@@ -20,8 +20,8 @@ type alias Game =
     }
 
 
-newGame : Player -> List Player -> Game
-newGame first list =
+init : Player -> List Player -> Model
+init first list =
     { iteration = 1
     , phase = Production { remainingTicks = 120 }
     , players = PlayerQueue.create first list
@@ -29,78 +29,40 @@ newGame first list =
     }
 
 
-startIteration : Game -> Game
-startIteration game =
-    case game.phase of
-        Production _ ->
-            { game | phase = Play { iterationQueue = game.players } }
-
-        Play _ ->
-            game
+type Msg
+    = Tick
+    | StartIteration
+    | StopIteration
+    | SkipCurrentPlayer
+    | NextPlayer
 
 
-stopIteration : Game -> Game
-stopIteration game =
-    case game.phase of
-        Production _ ->
-            game
-
-        Play _ ->
-            { game
-                | phase = Production { remainingTicks = 120 }
-                , iteration = game.iteration + 1
-                , players = PlayerQueue.next game.players
-            }
+onTick : Msg
+onTick =
+    Tick
 
 
-nextPlayer : Game -> Game
-nextPlayer game =
-    case game.phase of
-        Production _ ->
-            game
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        Tick ->
+            tick model
 
-        Play phaseInfo ->
-            { game | phase = Play { phaseInfo | iterationQueue = PlayerQueue.next phaseInfo.iterationQueue } }
+        StartIteration ->
+            startIteration model
 
+        StopIteration ->
+            stopIteration model
 
-skipCurrentPlayer : Game -> Game
-skipCurrentPlayer game =
-    case game.phase of
-        Production _ ->
-            game
+        SkipCurrentPlayer ->
+            skipCurrentPlayer model
 
-        Play phase ->
-            case PlayerQueue.skipCurrent phase.iterationQueue of
-                Nothing ->
-                    stopIteration game
-
-                Just newQueue ->
-                    { game | phase = Play { iterationQueue = newQueue } }
+        NextPlayer ->
+            nextPlayer model
 
 
-tick : Game -> Game
-tick game =
-    case game.phase of
-        Production phase ->
-            { game
-                | phase = Production { phase | remainingTicks = phase.remainingTicks - 1 }
-            }
-
-        Play phase ->
-            let
-                current =
-                    PlayerQueue.getCurrent phase.iterationQueue
-            in
-            { game | playerTimers = decrementPlayerTick current game.playerTimers }
-
-
-getIteration : Game -> Int
-getIteration game =
-    game.iteration
-
-
-gameView : Game -> Element msg
-gameView game =
+view : Model -> Element msg
+view game =
     case game.phase of
         Production phase ->
             let
@@ -112,6 +74,7 @@ gameView game =
                     [ Border.color <| rgb255 255 0 0, spacing 15 ]
                     [ text "production phase", text (String.fromInt phase.remainingTicks) ]
                 , text (String.fromInt (getIteration game))
+                , row [] []
                 , row [] (List.map Player.view playerList)
                 ]
 
@@ -128,6 +91,77 @@ gameView game =
                     [ Border.color <| rgb255 0 255 0, spacing 15 ]
                     [ text "play phase" ]
                 , text (String.fromInt (getIteration game))
+                , row [] []
                 , text ("player remaining: " ++ String.fromInt current)
                 , row [] (List.map Player.view playerList)
                 ]
+
+
+startIteration : Model -> Model
+startIteration game =
+    case game.phase of
+        Production _ ->
+            { game | phase = Play { iterationQueue = game.players } }
+
+        Play _ ->
+            game
+
+
+stopIteration : Model -> Model
+stopIteration game =
+    case game.phase of
+        Production _ ->
+            game
+
+        Play _ ->
+            { game
+                | phase = Production { remainingTicks = 120 }
+                , iteration = game.iteration + 1
+                , players = PlayerQueue.next game.players
+            }
+
+
+nextPlayer : Model -> Model
+nextPlayer game =
+    case game.phase of
+        Production _ ->
+            game
+
+        Play phaseInfo ->
+            { game | phase = Play { phaseInfo | iterationQueue = PlayerQueue.next phaseInfo.iterationQueue } }
+
+
+skipCurrentPlayer : Model -> Model
+skipCurrentPlayer game =
+    case game.phase of
+        Production _ ->
+            game
+
+        Play phase ->
+            case PlayerQueue.skipCurrent phase.iterationQueue of
+                Nothing ->
+                    stopIteration game
+
+                Just newQueue ->
+                    { game | phase = Play { iterationQueue = newQueue } }
+
+
+tick : Model -> Model
+tick game =
+    case game.phase of
+        Production phase ->
+            { game
+                | phase = Production { phase | remainingTicks = phase.remainingTicks - 1 }
+            }
+
+        Play phase ->
+            let
+                current =
+                    PlayerQueue.getCurrent phase.iterationQueue
+            in
+            { game | playerTimers = decrementPlayerTick current game.playerTimers }
+
+
+getIteration : Model -> Int
+getIteration game =
+    game.iteration

@@ -1,4 +1,4 @@
-module App exposing (Model, Msg, init, update, view)
+module App exposing (Model, Msg, init, update, view, onTick)
 
 import Element exposing (Element)
 import Game
@@ -23,6 +23,11 @@ type Msg
     = Tick
     | GameMsg Game.Msg
     | BuilderMsg GameBuilder.Msg
+
+
+onTick : Msg
+onTick =
+    Tick
 
 
 update : Msg -> Model -> Model

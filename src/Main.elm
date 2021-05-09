@@ -2,10 +2,10 @@ module Main exposing (..)
 
 import App
 import Browser exposing (Document)
-import Element exposing (column)
-import Game
-import GameBuilder
-import Time
+import DateFormat
+import Element exposing (Element, column, el, fill, height, padding, spacing, text)
+import Task
+import Time exposing (Posix, Zone, millisToPosix, utc)
 
 
 main : Program () Model Msg
@@ -18,37 +18,46 @@ main =
         }
 
 
-type AppState
-    = Builder GameBuilder.Model
-    | Game Game.Model
-
-
 type alias Model =
     { app : App.Model
-    , date : String
+    , time : ( Zone, Posix )
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { app = App.init, date = "" }, Cmd.none )
+    let
+        adjustTask =
+            Task.map2 (\zone time -> ( zone, time )) Time.here Time.now
+    in
+    ( { app = App.init, time = ( utc, millisToPosix 0 ) }
+    , Task.perform AdjustTime adjustTask
+    )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 1000 (\_ -> Tick)
+    Time.every 1000 (\time -> Tick time)
 
 
 type Msg
-    = Tick
+    = Tick Posix
+    | AdjustTime ( Zone, Posix )
     | AppMsg App.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        ( zone, _ ) =
+            model.time
+    in
     case msg of
-        Tick ->
-            ( model, Cmd.none )
+        AdjustTime timeInfo ->
+            ( { model | time = timeInfo }, Cmd.none )
+
+        Tick time ->
+            ( { model | app = App.update App.onTick model.app, time = ( zone, time ) }, Cmd.none )
 
         AppMsg appMsg ->
             ( { model | app = App.update appMsg model.app }, Cmd.none )
@@ -58,13 +67,38 @@ update msg model =
 -- VIEW
 
 
+viewTime : Model -> Element msg
+viewTime { time } =
+    let
+        ( zone, posix ) =
+            time
+    in
+    text <|
+        DateFormat.format
+            [ DateFormat.dayOfMonthFixed
+            , DateFormat.text "-"
+            , DateFormat.monthFixed
+            , DateFormat.text "-"
+            , DateFormat.yearNumberLastTwo
+            , DateFormat.text " "
+            , DateFormat.hourFixed
+            , DateFormat.text ":"
+            , DateFormat.minuteFixed
+            , DateFormat.text ":"
+            , DateFormat.secondFixed
+            ]
+            zone
+            posix
+
+
 view : Model -> Document Msg
 view model =
     { title = "Terraforming mars clock"
     , body =
-        [ Element.layout [] <|
-            column []
-                [ Element.map (\msg -> AppMsg msg) (App.view model.app)
+        [ Element.layout [ height fill ] <|
+            column [ padding 15, spacing 15, height fill ]
+                [ el [ height fill ] (Element.map (\msg -> AppMsg msg) (App.view model.app))
+                , el [] <| viewTime model
                 ]
         ]
     }

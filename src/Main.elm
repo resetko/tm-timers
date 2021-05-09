@@ -1,7 +1,8 @@
 module Main exposing (..)
 
+import App
 import Browser exposing (Document)
-import Element exposing (Element)
+import Element exposing (column)
 import Game
 import GameBuilder
 import Time
@@ -23,16 +24,14 @@ type AppState
 
 
 type alias Model =
-    { app : AppState
+    { app : App.Model
     , date : String
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { app = Builder GameBuilder.init, date = "" }
-    , Cmd.none
-    )
+    ( { app = App.init, date = "" }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -42,60 +41,30 @@ subscriptions _ =
 
 type Msg
     = Tick
-    | GameMsg Game.Msg
-    | BuilderMsg GameBuilder.Msg
+    | AppMsg App.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model.app of
-        Builder builder ->
-            case msg of
-                BuilderMsg builderMsg ->
-                    let
-                        ( newBuilder, maybeBuilderExternalMsg ) =
-                            GameBuilder.update builderMsg builder
-                    in
-                    case maybeBuilderExternalMsg of
-                        Nothing ->
-                            ( { model | app = Builder newBuilder }, Cmd.none )
+    case msg of
+        Tick ->
+            ( model, Cmd.none )
 
-                        Just builderExternalMsg ->
-                            case builderExternalMsg of
-                                GameBuilder.Start ( first, rest ) ->
-                                    ( { model | app = Game <| Game.init first rest }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        Game game ->
-            case msg of
-                Tick ->
-                    ( { model | app = Game (Game.update Game.onTick game) }, Cmd.none )
-
-                GameMsg gameMsg ->
-                    ( { model | app = Game (Game.update gameMsg game) }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
+        AppMsg appMsg ->
+            ( { model | app = App.update appMsg model.app }, Cmd.none )
 
 
 
 -- VIEW
 
 
-viewApp : Model -> Element Msg
-viewApp model =
-    case model.app of
-        Game game ->
-            Element.map (\msg -> GameMsg msg) (Game.view game)
-
-        Builder builder ->
-            Element.map (\msg -> BuilderMsg msg) (GameBuilder.view builder)
-
-
 view : Model -> Document Msg
 view model =
     { title = "Terraforming mars clock"
-    , body = [ Element.layout [] (viewApp model) ]
+    , body =
+        [ Element.layout [] <|
+            column []
+                [ Element.map (\msg -> AppMsg msg) (App.view model.app)
+                ]
+        ]
     }

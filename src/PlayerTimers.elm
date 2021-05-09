@@ -1,4 +1,4 @@
-module PlayerTimers exposing (PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers)
+module PlayerTimers exposing (PlayerTimers, decrement, getRemaining, init)
 
 import Dict exposing (Dict, get, update)
 import Player exposing (Player, toString)
@@ -8,14 +8,18 @@ type PlayerTimers
     = Table (Dict String Int)
 
 
-newPlayerTimers : List Player -> Int -> PlayerTimers
-newPlayerTimers players ticks =
+init : List Player -> PlayerTimers
+init players =
+    let
+        ticks =
+            round <| 180 * 60 / (toFloat <| List.length players)
+    in
     Table
         (Dict.fromList (List.map (\item -> ( toString item, ticks )) players))
 
 
-decrementPlayerTick : Player -> PlayerTimers -> PlayerTimers
-decrementPlayerTick player table =
+decrement : Player -> PlayerTimers -> PlayerTimers
+decrement player table =
     case table of
         Table dict ->
             let

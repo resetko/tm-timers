@@ -2,9 +2,10 @@ module Game exposing (Model, Msg, init, onTick, update, view)
 
 import Element exposing (Element, column, rgb255, row, spacing, text)
 import Element.Border as Border
+import Element.Input exposing (button)
 import Player exposing (Player)
 import PlayerQueue exposing (PlayerQueue)
-import PlayerTimers exposing (PlayerTimers, decrementPlayerTick, getRemaining, newPlayerTimers)
+import PlayerTimers exposing (PlayerTimers, decrement, getRemaining)
 
 
 type Phase
@@ -12,27 +13,39 @@ type Phase
     | Play { iterationQueue : PlayerQueue }
 
 
+type TimerState
+    = Running
+    | Stopped
+
+
 type alias Model =
     { iteration : Int
     , phase : Phase
     , playerTimers : PlayerTimers
     , players : PlayerQueue
+    , timer : TimerState
     }
 
 
 init : Player -> List Player -> Model
 init first list =
     { iteration = 1
-    , phase = Production { remainingTicks = 120 }
+    , phase = Production { remainingTicks = 180 }
     , players = PlayerQueue.create first list
-    , playerTimers = newPlayerTimers (first :: list) 2000
+    , playerTimers = PlayerTimers.init (first :: list)
+    , timer = Stopped
     }
+
+
+
+-- UPDATE
 
 
 type Msg
     = Tick
+    | StartTimer
+    | StopTimer
     | StartIteration
-    | StopIteration
     | SkipCurrentPlayer
     | NextPlayer
 
@@ -51,47 +64,77 @@ update msg model =
         StartIteration ->
             startIteration model
 
-        StopIteration ->
-            stopIteration model
-
         SkipCurrentPlayer ->
             skipCurrentPlayer model
 
         NextPlayer ->
             nextPlayer model
 
+        StartTimer ->
+            { model | timer = Running }
 
-view : Model -> Element msg
-view game =
-    case game.phase of
+        StopTimer ->
+            { model | timer = Stopped }
+
+
+viewTimer : TimerState -> Element Msg
+viewTimer state =
+    case state of
+        Running ->
+            button [] { onPress = Just StopTimer, label = text "stop increment timer" }
+
+        Stopped ->
+            button [] { onPress = Just StartTimer, label = text "start increment timer" }
+
+
+viewControls : Model -> Element Msg
+viewControls model =
+    case model.phase of
+        Production _ ->
+            row [ spacing 15 ]
+                [ viewTimer model.timer
+                , button [] { label = text "[Start iteration]", onPress = Just StartIteration }
+                ]
+
+        Play _ ->
+            row [ spacing 15 ]
+                [ viewTimer model.timer
+                , button [] { label = text "[Next player]", onPress = Just NextPlayer }
+                , button [] { label = text "[Skip current player]", onPress = Just SkipCurrentPlayer }
+                ]
+
+
+view : Model -> Element Msg
+view model =
+    case model.phase of
         Production phase ->
             let
                 playerList =
-                    PlayerQueue.toList game.players
+                    PlayerQueue.toList model.players
             in
             column [ spacing 5 ]
-                [ row
+                [ viewControls model
+                , row
                     [ Border.color <| rgb255 255 0 0, spacing 15 ]
                     [ text "production phase", text (String.fromInt phase.remainingTicks) ]
-                , text (String.fromInt (getIteration game))
-                , row [] []
+                , text (String.fromInt (getIteration model))
                 , row [] (List.map Player.view playerList)
                 ]
 
         Play phase ->
             let
                 current =
-                    getRemaining (PlayerQueue.getCurrent phase.iterationQueue) game.playerTimers
+                    getRemaining (PlayerQueue.getCurrent phase.iterationQueue) model.playerTimers
 
                 playerList =
                     PlayerQueue.toList phase.iterationQueue
             in
             column [ spacing 5 ]
-                [ row
+                [ viewControls model
+                , row
                     [ Border.color <| rgb255 0 255 0, spacing 15 ]
                     [ text "play phase" ]
-                , text (String.fromInt (getIteration game))
-                , row [] []
+                , text (String.fromInt (getIteration model))
                 , text ("player remaining: " ++ String.fromInt current)
                 , row [] (List.map Player.view playerList)
                 ]
@@ -127,8 +170,8 @@ nextPlayer game =
         Production _ ->
             game
 
-        Play phaseInfo ->
-            { game | phase = Play { phaseInfo | iterationQueue = PlayerQueue.next phaseInfo.iterationQueue } }
+        Play phase ->
+            { game | phase = Play { phase | iterationQueue = PlayerQueue.next phase.iterationQueue } }
 
 
 skipCurrentPlayer : Model -> Model
@@ -159,7 +202,7 @@ tick game =
                 current =
                     PlayerQueue.getCurrent phase.iterationQueue
             in
-            { game | playerTimers = decrementPlayerTick current game.playerTimers }
+            { game | playerTimers = decrement current game.playerTimers }
 
 
 getIteration : Model -> Int

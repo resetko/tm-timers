@@ -1,4 +1,4 @@
-module Player exposing (Player, allPlayersList, newBlack, newBlue, newRed, playerBackground, playerLabel, toString, view)
+module Player exposing (Player, allPlayersList, playerBackground, playerLabel, toString, view)
 
 import Element exposing (Attribute, Element, el, height, px, rgb255, text, width)
 import Element.Background as Background
@@ -35,21 +35,6 @@ toString player =
 allPlayersList : List Player
 allPlayersList =
     [ Green, Yellow, Blue, Black, NoSkin ]
-
-
-newBlue : Player
-newBlue =
-    Blue
-
-
-newBlack : Player
-newBlack =
-    Black
-
-
-newRed : Player
-newRed =
-    NoSkin
 
 
 playerLabel : Player -> String

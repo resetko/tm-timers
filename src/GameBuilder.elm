@@ -1,7 +1,8 @@
-module GameBuilder exposing (Model, Msg, init, update, view)
+module GameBuilder exposing (ExternalMsg(..), Model, Msg, init, update, view)
 
-import Element exposing (Element, column, row, spacing)
+import Element exposing (Element, column, row, spacing, text)
 import Element.Input exposing (button)
+import Html.Attributes exposing (selected)
 import List exposing (filter, map)
 import Player exposing (Player, allPlayersList)
 
@@ -15,29 +16,6 @@ init =
     map (\p -> ( p, False )) allPlayersList
 
 
-type Msg
-    = Pick Player
-    | Remove Player
-
-
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        Pick player ->
-            let
-                filtered =
-                    filter (\( item, _ ) -> item /= player) model
-            in
-            filtered ++ [ ( player, True ) ]
-
-        Remove player ->
-            let
-                filtered =
-                    filter (\( item, _ ) -> item /= player) model
-            in
-            filtered ++ [ ( player, False ) ]
-
-
 getSelected : Model -> List Player
 getSelected model =
     map (\( item, _ ) -> item) (filter (\( _, selected ) -> selected) model)
@@ -48,9 +26,58 @@ getRemaining model =
     map (\( item, _ ) -> item) (filter (\( _, selected ) -> not selected) model)
 
 
+
+-- UPDATE
+
+
+type Msg
+    = Pick Player
+    | Remove Player
+    | StartClick ( Player, List Player )
+
+
+type ExternalMsg
+    = Start ( Player, List Player )
+
+
+update : Msg -> Model -> ( Model, Maybe ExternalMsg )
+update msg model =
+    case msg of
+        Pick player ->
+            let
+                filtered =
+                    filter (\( item, _ ) -> item /= player) model
+            in
+            ( filtered ++ [ ( player, True ) ], Nothing )
+
+        Remove player ->
+            let
+                filtered =
+                    filter (\( item, _ ) -> item /= player) model
+            in
+            ( filtered ++ [ ( player, False ) ], Nothing )
+
+        StartClick payload ->
+            ( model, Just <| Start payload )
+
+
+
+-- VIEW
+
+
 playerButton : Maybe msg -> Player -> Element msg
 playerButton msg player =
     button [] { label = Player.view player, onPress = msg }
+
+
+viewStartGameButton : Model -> Element Msg
+viewStartGameButton model =
+    case getSelected model of
+        [] ->
+            Element.none
+
+        x :: xs ->
+            button [] { label = text "[Start game]", onPress = Just <| StartClick ( x, xs ) }
 
 
 view : Model -> Element Msg
@@ -66,4 +93,5 @@ view model =
                 (\item -> playerButton (Just (Remove item)) item)
                 (getSelected model)
             )
+        , viewStartGameButton model
         ]

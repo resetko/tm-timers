@@ -37,7 +37,7 @@ init _ =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 1000 (\time -> Tick time)
+    Time.every 100 (\time -> Tick time)
 
 
 type Msg
@@ -81,7 +81,7 @@ viewTime { time } =
             , DateFormat.text "-"
             , DateFormat.yearNumberLastTwo
             , DateFormat.text " "
-            , DateFormat.hourFixed
+            , DateFormat.hourMilitaryFixed
             , DateFormat.text ":"
             , DateFormat.minuteFixed
             , DateFormat.text ":"

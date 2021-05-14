@@ -1,4 +1,4 @@
-module PlayerQueue exposing (PlayerQueue, create, getCurrent, next, skipCurrent, toList, toTuple)
+module PlayerQueue exposing (PlayerQueue, create, getCurrent, getNextList, next, skipCurrent, toList, toTuple)
 
 import Player exposing (Player)
 import Queue exposing (Queue)
@@ -18,6 +18,13 @@ getCurrent q =
     case q of
         Q queue ->
             Queue.getCurrent queue
+
+
+getNextList : PlayerQueue -> List Player
+getNextList q =
+    case q of
+        Q queue ->
+            Queue.getRest queue
 
 
 skipCurrent : PlayerQueue -> Maybe PlayerQueue

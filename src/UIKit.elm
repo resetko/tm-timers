@@ -1,6 +1,6 @@
-module UIKit exposing (button, buttonBase)
+module UIKit exposing (button, buttonBase, iconButton)
 
-import Element exposing (Attr, Attribute, Color, Element, focused, padding, rgb255)
+import Element exposing (Attr, Attribute, Color, Element, focused, padding, rgb255, row, spacing)
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input
@@ -34,3 +34,16 @@ button attrs params =
             ++ attrs
         )
         params
+
+
+iconButton : List (Attribute msg) -> { onPress : Maybe msg, label : Element msg, icon : Element msg } -> Element msg
+iconButton attrs { onPress, icon, label } =
+    button
+        ([ Border.color teal
+         , Font.color teal
+         , Border.width 3
+         , padding 15
+         ]
+            ++ attrs
+        )
+        { onPress = onPress, label = row [ spacing 5 ] [ label, icon ] }

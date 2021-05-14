@@ -1,5 +1,6 @@
-module Queue exposing (Queue, createQueue, getCurrent, length, next, removeCurrent, toList)
+module Queue exposing (Queue, createQueue, getCurrent, getRest, length, next, removeCurrent, toList)
 
+import Html exposing (a)
 import List exposing (head, tail)
 
 
@@ -64,6 +65,11 @@ length ( _, rest ) =
 getCurrent : Queue a -> a
 getCurrent ( first, _ ) =
     first
+
+
+getRest : Queue a -> List a
+getRest ( _, rest ) =
+    rest
 
 
 createQueue : a -> List a -> Queue a

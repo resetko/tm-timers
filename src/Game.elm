@@ -1,11 +1,12 @@
 module Game exposing (Model, Msg, init, onTick, update, view)
 
-import Element exposing (Element, column, rgb255, row, spacing, text)
-import Element.Border as Border
+import DateFormat
+import Element exposing (Attribute, Element, column, row, spacing, text)
 import Player exposing (Player)
 import PlayerQueue exposing (PlayerQueue)
 import PlayerTimers exposing (PlayerTimers, decrement, getRemaining)
-import UIKit exposing (button)
+import Time exposing (millisToPosix, utc)
+import UIKit exposing (button, iconButton)
 
 
 
@@ -95,66 +96,84 @@ update msg model =
             { model | timer = Stopped }
 
 
-viewTimer : TimerState -> Element Msg
-viewTimer state =
+viewTimerButton : List (Attribute Msg) -> TimerState -> Element Msg -> Element Msg
+viewTimerButton attrs state label =
     case state of
         Running ->
-            button [] { onPress = Just StopTimer, label = text "stop increment timer" }
+            iconButton
+                attrs
+                { icon = text "||", label = label, onPress = Just StopTimer }
 
         Stopped ->
-            button [] { onPress = Just StartTimer, label = text "start increment timer" }
+            iconButton
+                attrs
+                { icon = text ">", label = label, onPress = Just StartTimer }
 
 
-viewControls : Model -> Element Msg
-viewControls model =
+viewMainButton : Model -> Element Msg
+viewMainButton model =
     case model.phase of
-        Production _ ->
-            row [ spacing 15 ]
-                [ viewTimer model.timer
-                , button [] { label = text "[Start iteration]", onPress = Just StartIteration }
-                ]
+        Production { remainingTicks } ->
+            viewTimerButton [] model.timer (viewTicksRemaining remainingTicks)
 
-        Play _ ->
-            row [ spacing 15 ]
-                [ viewTimer model.timer
-                , button [] { label = text "[Next player]", onPress = Just NextPlayer }
-                , button [] { label = text "[Skip current player]", onPress = Just SkipCurrentPlayer }
+        Play phase ->
+            let
+                current =
+                    PlayerQueue.getCurrent phase.iterationQueue
+
+                currentRemaining =
+                    getRemaining current model.playerTimers
+            in
+            viewTimerButton (Player.playerElementAttributes current) model.timer (viewTicksRemaining currentRemaining)
+
+
+viewTicksRemaining : Int -> Element msg
+viewTicksRemaining ticks =
+    let
+        time =
+            DateFormat.format
+                [ DateFormat.hourMilitaryFixed
+                , DateFormat.text ":"
+                , DateFormat.minuteFixed
+                , DateFormat.text ":"
+                , DateFormat.secondFixed
                 ]
+                utc
+                (millisToPosix <| abs <| ticks * 1000)
+    in
+    -- TODO Show timer in red if negative
+    if ticks >= 0 then
+        text <| "+" ++ time
+
+    else
+        text <| "-" ++ time
 
 
 view : Model -> Element Msg
 view model =
     case model.phase of
-        Production phase ->
+        Production _ ->
             let
                 playerList =
                     PlayerQueue.toList model.players
             in
             column [ spacing 5 ]
-                [ viewControls model
-                , row
-                    [ Border.color <| rgb255 255 0 0, spacing 15 ]
-                    [ text "production phase", text (String.fromInt phase.remainingTicks) ]
-                , text (String.fromInt (getIteration model))
+                [ text <| "Iteration: " ++ String.fromInt (getIteration model)
+                , viewMainButton model
+                , button [] { label = text "GO", onPress = Just StartIteration }
                 , row [ spacing 5 ] (List.map Player.view playerList)
                 ]
 
         Play phase ->
-            let
-                current =
-                    getRemaining (PlayerQueue.getCurrent phase.iterationQueue) model.playerTimers
-
-                playerList =
-                    PlayerQueue.toList phase.iterationQueue
-            in
             column [ spacing 5 ]
-                [ viewControls model
-                , row
-                    [ Border.color <| rgb255 0 255 0, spacing 15 ]
-                    [ text "play phase" ]
-                , text (String.fromInt (getIteration model))
-                , text ("player remaining: " ++ String.fromInt current)
-                , row [ spacing 5 ] (List.map Player.view playerList)
+                [ text <| "Iteration: " ++ String.fromInt (getIteration model)
+                , viewMainButton model
+                , row [ spacing 15 ]
+                    -- TODO => button must be inactive if only one player is remaining
+                    [ button [] { label = text "=>", onPress = Just NextPlayer }
+                    , button [] { label = text "X", onPress = Just SkipCurrentPlayer }
+                    ]
+                , row [ spacing 5 ] (List.map Player.view <| PlayerQueue.getNextList phase.iterationQueue)
                 ]
 
 

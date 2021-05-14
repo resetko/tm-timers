@@ -1,10 +1,10 @@
 module GameBuilder exposing (ExternalMsg(..), Model, Msg, init, update, view)
 
 import Element exposing (Element, column, row, spacing, text)
-import Element.Input exposing (button)
 import Html.Attributes exposing (selected)
 import List exposing (filter, map)
 import Player exposing (Player, allPlayersList)
+import UIKit exposing (button, buttonBase)
 
 
 type alias Model =
@@ -67,7 +67,7 @@ update msg model =
 
 playerButton : Maybe msg -> Player -> Element msg
 playerButton msg player =
-    button [] { label = Player.view player, onPress = msg }
+    buttonBase [] { label = Player.view player, onPress = msg }
 
 
 viewStartGameButton : Model -> Element Msg

@@ -2,10 +2,28 @@ module Game exposing (Model, Msg, init, onTick, update, view)
 
 import Element exposing (Element, column, rgb255, row, spacing, text)
 import Element.Border as Border
-import Element.Input exposing (button)
 import Player exposing (Player)
 import PlayerQueue exposing (PlayerQueue)
 import PlayerTimers exposing (PlayerTimers, decrement, getRemaining)
+import UIKit exposing (button)
+
+
+
+-- Constants
+
+
+initialProductionTime : Int
+initialProductionTime =
+    60 * 7
+
+
+productionTime : Int
+productionTime =
+    60 * 4
+
+
+
+-- Model
 
 
 type Phase
@@ -30,10 +48,10 @@ type alias Model =
 init : Player -> List Player -> Model
 init first list =
     { iteration = 1
-    , phase = Production { remainingTicks = 180 }
+    , phase = Production { remainingTicks = initialProductionTime }
     , players = PlayerQueue.create first list
     , playerTimers = PlayerTimers.init (first :: list)
-    , timer = Stopped
+    , timer = Running
     }
 
 
@@ -118,7 +136,7 @@ view model =
                     [ Border.color <| rgb255 255 0 0, spacing 15 ]
                     [ text "production phase", text (String.fromInt phase.remainingTicks) ]
                 , text (String.fromInt (getIteration model))
-                , row [] (List.map Player.view playerList)
+                , row [ spacing 5 ] (List.map Player.view playerList)
                 ]
 
         Play phase ->
@@ -136,7 +154,7 @@ view model =
                     [ text "play phase" ]
                 , text (String.fromInt (getIteration model))
                 , text ("player remaining: " ++ String.fromInt current)
-                , row [] (List.map Player.view playerList)
+                , row [ spacing 5 ] (List.map Player.view playerList)
                 ]
 
 
@@ -158,7 +176,7 @@ stopIteration game =
 
         Play _ ->
             { game
-                | phase = Production { remainingTicks = 120 }
+                | phase = Production { remainingTicks = productionTime }
                 , iteration = game.iteration + 1
                 , players = PlayerQueue.next game.players
             }
@@ -191,18 +209,23 @@ skipCurrentPlayer game =
 
 tick : Model -> Model
 tick game =
-    case game.phase of
-        Production phase ->
-            { game
-                | phase = Production { phase | remainingTicks = phase.remainingTicks - 1 }
-            }
+    case game.timer of
+        Stopped ->
+            game
 
-        Play phase ->
-            let
-                current =
-                    PlayerQueue.getCurrent phase.iterationQueue
-            in
-            { game | playerTimers = decrement current game.playerTimers }
+        Running ->
+            case game.phase of
+                Production phase ->
+                    { game
+                        | phase = Production { phase | remainingTicks = phase.remainingTicks - 1 }
+                    }
+
+                Play phase ->
+                    let
+                        current =
+                            PlayerQueue.getCurrent phase.iterationQueue
+                    in
+                    { game | playerTimers = decrement current game.playerTimers }
 
 
 getIteration : Model -> Int

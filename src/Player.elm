@@ -1,7 +1,8 @@
-module Player exposing (Player, allPlayersList, playerBackground, playerLabel, toString, view)
+module Player exposing (Player, allPlayersList, playerElementStyle, toString, view)
 
-import Element exposing (Attribute, Element, el, height, px, rgb255, text, width)
+import Element exposing (Attribute, Element, el, height, px, rgb255, width)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 
 
@@ -37,50 +38,51 @@ allPlayersList =
     [ Green, Yellow, Blue, Black, NoSkin ]
 
 
-playerLabel : Player -> String
-playerLabel player =
+playerElementStyle : Player -> List (Attribute msg)
+playerElementStyle player =
+    let
+        common =
+            [ Border.solid, Border.width 3 ]
+    in
     case player of
         NoSkin ->
-            "NoSkin"
+            [ Background.color <| rgb255 255 214 224
+            , Border.color <| rgb255 255 91 102
+            ]
+                ++ common
 
         Blue ->
-            "Blue"
+            [ Background.color <| rgb255 204 226 243
+            , Border.color <| rgb255 0 110 197
+            ]
+                ++ common
 
         Green ->
-            "Green"
+            [ Background.color <| rgb255 220 239 221
+            , Border.color <| rgb255 78 174 83
+            ]
+                ++ common
 
         Yellow ->
-            "Yellow"
+            [ Background.color <| rgb255 255 237 212
+            , Border.color <| rgb255 255 167 38
+            ]
+                ++ common
 
         Black ->
-            "Black"
-
-
-playerBackground : Player -> Attribute msg
-playerBackground player =
-    case player of
-        NoSkin ->
-            Background.color <| rgb255 255 0 0
-
-        Blue ->
-            Background.color <| rgb255 0 0 255
-
-        Green ->
-            Background.color <| rgb255 0 255 0
-
-        Yellow ->
-            Background.color <| rgb255 255 255 0
-
-        Black ->
-            Background.color <| rgb255 128 128 128
+            [ Background.color <| rgb255 222 224 227
+            , Border.color <| rgb255 90 98 117
+            ]
+                ++ common
 
 
 view : Player -> Element msg
 view player =
     el
-        [ height <| px 50
-        , width <| px 50
-        , Font.size 14
-        , playerBackground player
-        ]
-        (text <| playerLabel player)
+        ([ height <| px 50
+         , width <| px 50
+         , Font.size 14
+         ]
+            ++ playerElementStyle player
+        )
+        Element.none

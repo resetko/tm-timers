@@ -37,7 +37,7 @@ init _ =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 100 (\time -> Tick time)
+    Time.every 1000 (\time -> Tick time)
 
 
 type Msg

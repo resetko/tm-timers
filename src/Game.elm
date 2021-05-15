@@ -158,7 +158,7 @@ view model =
                     PlayerQueue.toList model.players
             in
             column [ spacing 5 ]
-                [ text <| "Iteration: " ++ String.fromInt (getIteration model)
+                [ text <| "Iteration: " ++ String.fromInt model.iteration
                 , viewMainButton model
                 , button [] { label = text "GO", onPress = Just StartIteration }
                 , row [ spacing 5 ] (List.map Player.view playerList)
@@ -166,7 +166,7 @@ view model =
 
         Play phase ->
             column [ spacing 5 ]
-                [ text <| "Iteration: " ++ String.fromInt (getIteration model)
+                [ text <| "Iteration: " ++ String.fromInt model.iteration
                 , viewMainButton model
                 , row [ spacing 15 ]
                     -- TODO => button must be inactive if only one player is remaining
@@ -245,8 +245,3 @@ tick game =
                             PlayerQueue.getCurrent phase.iterationQueue
                     in
                     { game | playerTimers = decrement current game.playerTimers }
-
-
-getIteration : Model -> Int
-getIteration game =
-    game.iteration
